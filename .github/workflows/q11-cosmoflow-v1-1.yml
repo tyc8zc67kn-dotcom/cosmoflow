@@ -45,6 +45,8 @@ jobs:
         env:
           MPLBACKEND: Agg
         run: |
+          mkdir -p q11_cosmoflow/artifacts/v1.1
+          set -o pipefail
           python q11_cosmoflow/run_v1_1.py | tee q11_cosmoflow/artifacts/v1.1/run.log
 
       - name: SHA256 freeze

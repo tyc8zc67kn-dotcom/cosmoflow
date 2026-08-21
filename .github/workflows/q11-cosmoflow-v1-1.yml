@@ -1,0 +1,57 @@
+name: Q11 CosmoFlow V1.1 Baseline
+
+on:
+  push:
+    branches:
+      - q11-cosmoflow-v1
+    paths:
+      - 'q11_cosmoflow/**'
+      - '.github/workflows/q11-cosmoflow-v1-1.yml'
+      - 'CosmoFlow/Massless_dphi3/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.8.18
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8.18'
+          cache: 'pip'
+          cache-dependency-path: q11_cosmoflow/requirements-v1.1.txt
+
+      - name: Install locked dependencies
+        run: |
+          python -m pip install --upgrade 'pip<25'
+          pip install -r q11_cosmoflow/requirements-v1.1.txt
+          pip freeze | sort > q11_cosmoflow/environment-freeze-v1.1.txt
+
+      - name: Run upstream baseline and materialize raw outputs
+        env:
+          MPLBACKEND: Agg
+        run: |
+          python q11_cosmoflow/run_v1_1.py | tee q11_cosmoflow/artifacts/v1.1/run.log
+
+      - name: SHA256 freeze
+        run: |
+          cd q11_cosmoflow/artifacts/v1.1
+          sha256sum raw_baseline.npz manifest.json run.log | sort > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload V1.1 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: q11-cosmoflow-v1-1-baseline
+          path: |
+            q11_cosmoflow/artifacts/v1.1/**
+            q11_cosmoflow/environment-freeze-v1.1.txt
+          if-no-files-found: error
+          retention-days: 90

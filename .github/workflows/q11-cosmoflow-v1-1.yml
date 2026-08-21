@@ -8,6 +8,13 @@ on:
       - 'q11_cosmoflow/**'
       - '.github/workflows/q11-cosmoflow-v1-1.yml'
       - 'CosmoFlow/Massless_dphi3/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'q11_cosmoflow/**'
+      - '.github/workflows/q11-cosmoflow-v1-1.yml'
+      - 'CosmoFlow/Massless_dphi3/**'
   workflow_dispatch:
 
 permissions:

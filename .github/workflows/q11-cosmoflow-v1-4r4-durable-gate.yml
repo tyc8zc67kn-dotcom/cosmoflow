@@ -5,7 +5,7 @@ on:
     branches: [q11-cosmoflow-v1]
     paths:
       - 'Q11_COSMOFLOW_V1_4R4_PREREGISTRATION.md'
-      - 'q11_forensics/reference/v1.1r_canonical_arrays.json'
+      - 'q11_forensics/reference/v1.1r_payload.part*'
       - 'q11_forensics/run_v1_4r4_durable_gate.py'
       - '.github/workflows/q11-cosmoflow-v1-4r4-durable-gate.yml'
       - 'q11_cosmoflow/run_v1_1.py'
@@ -15,7 +15,7 @@ on:
     branches: [main]
     paths:
       - 'Q11_COSMOFLOW_V1_4R4_PREREGISTRATION.md'
-      - 'q11_forensics/reference/v1.1r_canonical_arrays.json'
+      - 'q11_forensics/reference/v1.1r_payload.part*'
       - 'q11_forensics/run_v1_4r4_durable_gate.py'
       - '.github/workflows/q11-cosmoflow-v1-4r4-durable-gate.yml'
       - 'q11_cosmoflow/run_v1_1.py'
@@ -52,7 +52,7 @@ jobs:
           mkdir -p q11_forensics/artifacts/v1.4r4
           pip freeze | sort > q11_forensics/artifacts/v1.4r4/environment-freeze.txt
 
-      - name: Execute durable portable gate
+      - name: Verify durable reference package and execute gate
         env:
           MPLBACKEND: Agg
         run: |
@@ -62,7 +62,10 @@ jobs:
       - name: Freeze V1.4R4 evidence
         run: |
           sha256sum \
-            q11_forensics/reference/v1.1r_canonical_arrays.json \
+            q11_forensics/reference/v1.1r_payload.part1 \
+            q11_forensics/reference/v1.1r_payload.part2 \
+            q11_forensics/reference/v1.1r_payload.part3 \
+            q11_forensics/reference/v1.1r_payload.part4 \
             q11_forensics/artifacts/v1.4r4/durable_gate_report.json \
             q11_forensics/artifacts/v1.4r4/environment-freeze.txt \
             q11_forensics/artifacts/v1.4r4/run.log \

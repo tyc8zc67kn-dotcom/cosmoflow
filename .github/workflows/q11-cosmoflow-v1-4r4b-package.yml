@@ -1,0 +1,82 @@
+name: Q11 CosmoFlow V1.4R4B Package Canonical Binary
+
+on:
+  push:
+    branches: [q11-cosmoflow-v1]
+    paths:
+      - 'Q11_COSMOFLOW_V1_4R4B_PREREGISTRATION.md'
+      - '.github/workflows/q11-cosmoflow-v1-4r4b-package.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  package-canonical-binary:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: q11-cosmoflow-v1
+          fetch-depth: 0
+
+      - name: Download original V1.1R source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/q11-r4b-source
+          mkdir -p /tmp/q11-r4b-source
+          curl -L --fail --retry 3 \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/9437578374/zip" \
+            -o /tmp/q11-r4b-source.zip
+          unzip -q /tmp/q11-r4b-source.zip -d /tmp/q11-r4b-source
+          test -f /tmp/q11-r4b-source/artifacts/v1.1/raw_baseline.npz
+
+      - name: Verify source bytes before packaging
+        run: |
+          set -euo pipefail
+          echo "b3247d19e54dda0652b77649e2c5826ed44b5c633ad8a6d15b0e96319eec84e1  /tmp/q11-r4b-source/artifacts/v1.1/raw_baseline.npz" | sha256sum -c -
+          test "$(stat -c%s /tmp/q11-r4b-source/artifacts/v1.1/raw_baseline.npz)" = "19506"
+
+      - name: Copy exact binary and provenance into repository
+        run: |
+          set -euo pipefail
+          mkdir -p q11_cosmoflow/canonical/v1.1r
+          cp --preserve=mode /tmp/q11-r4b-source/artifacts/v1.1/raw_baseline.npz q11_cosmoflow/canonical/v1.1r/raw_baseline.npz
+          echo "b3247d19e54dda0652b77649e2c5826ed44b5c633ad8a6d15b0e96319eec84e1  q11_cosmoflow/canonical/v1.1r/raw_baseline.npz" | sha256sum -c -
+          cat > q11_cosmoflow/canonical/v1.1r/CANONICAL_REFERENCE.md <<'EOF'
+          # Canonical V1.1R binary reference
+
+          Source artifact ID: `9437578374`
+          Source workflow run: `32456990085`
+          Source head commit: `616f8b49e99cf19bca3bfd97f5ae506443246748`
+          File: `raw_baseline.npz`
+          Byte size: `19506`
+          SHA256: `b3247d19e54dda0652b77649e2c5826ed44b5c633ad8a6d15b0e96319eec84e1`
+
+          This file is copied byte-for-byte from the original V1.1R Actions artifact. It is not regenerated and is not converted through JSON, decimal text, or a new NPZ serialization step.
+          EOF
+
+      - name: Commit exact canonical bytes
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add q11_cosmoflow/canonical/v1.1r/raw_baseline.npz q11_cosmoflow/canonical/v1.1r/CANONICAL_REFERENCE.md
+          if git diff --cached --quiet; then
+            echo "Canonical binary is already committed; verifying integrity only."
+          else
+            git commit -m "freeze V1.4R4B canonical V1.1R binary reference"
+            git push origin HEAD:q11-cosmoflow-v1
+          fi
+
+      - name: Final repository-worktree integrity check
+        run: |
+          echo "b3247d19e54dda0652b77649e2c5826ed44b5c633ad8a6d15b0e96319eec84e1  q11_cosmoflow/canonical/v1.1r/raw_baseline.npz" | sha256sum -c -

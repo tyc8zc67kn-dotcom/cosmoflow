@@ -1,5 +1,6 @@
 name: Q11 CosmoFlow V1.4R4B Package Canonical Binary
 
+# One-time lossless packaging workflow. The canonical bytes are never regenerated.
 on:
   push:
     branches: [q11-cosmoflow-v1]

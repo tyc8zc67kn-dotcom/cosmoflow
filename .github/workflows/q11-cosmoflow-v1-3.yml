@@ -1,0 +1,46 @@
+name: Q11 CosmoFlow V1.3 Robustness Audit
+
+on:
+  push:
+    branches: [q11-cosmoflow-v1]
+    paths: ['Q11_COSMOFLOW_V1_3_PREREGISTRATION.md', 'q11_cosmoflow/run_v1_3.py', '.github/workflows/q11-cosmoflow-v1-3.yml', 'q11_cosmoflow/run_v1_1.py', 'q11_cosmoflow/requirements-v1.1.txt', 'CosmoFlow/Massless_dphi3/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  robustness-audit:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8.18'
+          cache: pip
+          cache-dependency-path: q11_cosmoflow/requirements-v1.1.txt
+      - name: Install locked dependencies
+        run: |
+          python -m pip install --upgrade 'pip<25'
+          pip install -r q11_cosmoflow/requirements-v1.1.txt
+          pip freeze | sort > q11_cosmoflow/environment-freeze-v1.3.txt
+      - name: Execute preregistered V1.3 audit
+        env: {MPLBACKEND: Agg}
+        run: |
+          mkdir -p q11_cosmoflow/artifacts/v1.3
+          set -o pipefail
+          python q11_cosmoflow/run_v1_3.py | tee q11_cosmoflow/artifacts/v1.3/run.log
+      - name: SHA256 freeze
+        run: |
+          cd q11_cosmoflow/artifacts/v1.3
+          sha256sum raw_baseline.npz representations.json scores.csv summary.json run.log | sort > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: q11-cosmoflow-v1-3-robustness-audit
+          path: |
+            q11_cosmoflow/artifacts/v1.3/**
+            q11_cosmoflow/environment-freeze-v1.3.txt
+            Q11_COSMOFLOW_V1_3_PREREGISTRATION.md
+          if-no-files-found: error
+          retention-days: 90
